@@ -284,18 +284,65 @@
                 <h2 class="display-5 fw-bold mb-3">Documentos y Recursos</h2>
                 <p class="lead text-muted">Accede a documentación técnica, manuales y recursos de trabajo</p>
             </div>
-            <!-- Eliminando documentos estáticos predeterminados y dejando solo los dinámicos -->
-            <div id="dynamicDocuments" class="row g-4">
-                <!-- Los documentos subidos se cargarán aquí dinámicamente -->
-                <div class="col-12 text-center" id="noDocumentsMessage">
-                    <div class="py-5">
-                        <i class="bi bi-folder2-open display-1 text-muted mb-3"></i>
-                        <h4 class="text-muted">No hay documentos disponibles</h4>
-                        <p class="text-muted">Los documentos subidos por los administradores aparecerán aquí</p>
-                        <a href="login.html" class="btn btn-primary">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión para Subir Documentos
-                        </a>
+            
+            <!-- Agregando opción para mostrar carpeta completa de Google Drive -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-google text-primary me-2"></i>
+                                Ver Carpeta Completa de Google Drive
+                            </h5>
+                            <p class="card-text text-muted">Accede directamente a todos los documentos en la carpeta de Google Drive</p>
+                            <button class="btn btn-primary" onclick="showGoogleDriveFolder()">
+                                <i class="bi bi-folder2-open me-2"></i>Abrir Carpeta de Google Drive
+                            </button>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Documentos individuales de Google Drive -->
+            <div id="googleDriveDocuments" class="row g-4">
+                <!-- Los documentos de Google Drive se cargarán aquí -->
+            </div>
+            
+            <!-- Agregando iframe para mostrar carpeta embebida -->
+            <div id="googleDriveFolderContainer" class="row g-4" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-google text-primary me-2"></i>
+                                Carpeta de Google Drive
+                            </h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="hideGoogleDriveFolder()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <iframe id="googleDriveFrame" 
+                                    width="100%" 
+                                    height="600" 
+                                    frameborder="0">
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 text-center" id="noDocumentsMessage">
+                <div class="py-5">
+                    <i class="bi bi-folder2-open display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay documentos disponibles</h4>
+                    <p class="text-muted">Los documentos de Google Drive aparecerán aquí</p>
+                    <a href="google-drive-setup.html" class="btn btn-primary me-2">
+                        <i class="bi bi-google me-2"></i>Configurar Google Drive
+                    </a>
+                    <a href="login.html" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                    </a>
                 </div>
             </div>
         </div>
@@ -586,8 +633,147 @@
             }
         }
 
+        function loadGoogleDriveDocuments() {
+            const storedDriveFiles = localStorage.getItem("googleDriveFiles");
+            const container = document.getElementById("googleDriveDocuments");
+            const noDocsMessage = document.getElementById("noDocumentsMessage");
+            
+            if (!storedDriveFiles) {
+                if (noDocsMessage) noDocsMessage.style.display = 'block';
+                return;
+            }
+            
+            const driveFiles = JSON.parse(storedDriveFiles);
+            
+            if (!container || !driveFiles || driveFiles.length === 0) {
+                if (noDocsMessage) noDocsMessage.style.display = 'block';
+                return;
+            }
+            
+            if (noDocsMessage) noDocsMessage.style.display = 'none';
+            
+            const documentsHtml = driveFiles.map(file => {
+                const iconClass = getGoogleDriveIcon(file.type);
+                const colorClass = getGoogleDriveColor(file.type);
+                
+                return `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="document-card h-100">
+                            <div class="document-icon">
+                                <i class="bi ${iconClass} ${colorClass}"></i>
+                            </div>
+                            <div class="document-content">
+                                <h5 class="mb-2">${file.name}</h5>
+                                <p class="text-muted mb-3">${file.description || 'Documento de Google Drive'}</p>
+                                <div class="document-meta mb-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>Agregado: ${formatDate(file.dateAdded)}
+                                    </small>
+                                    <small class="text-muted ms-3">
+                                        <i class="bi bi-google me-1"></i>Google Drive
+                                    </small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn ${colorClass.replace('text-', 'btn-')} btn-sm" onclick="viewGoogleDriveFile('${file.viewUrl}')">
+                                        <i class="bi bi-eye me-1"></i>Ver
+                                    </button>
+                                    <button class="btn btn-outline${colorClass.replace('text', '')} btn-sm" onclick="downloadGoogleDriveFile('${file.downloadUrl}', '${file.name}')">
+                                        <i class="bi bi-download me-1"></i>Descargar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = documentsHtml;
+        }
+        
+        function getGoogleDriveIcon(type) {
+            const icons = {
+                'application/pdf': "bi-file-earmark-pdf",
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': "bi-file-earmark-excel",
+                'application/vnd.ms-excel': "bi-file-earmark-excel",
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': "bi-file-earmark-word",
+                'application/msword': "bi-file-earmark-word",
+                'image/jpeg': "bi-file-earmark-image",
+                'image/png': "bi-file-earmark-image",
+                'image/gif': "bi-file-earmark-image"
+            };
+            return icons[type] || "bi-file-earmark";
+        }
+        
+        function getGoogleDriveColor(type) {
+            const colors = {
+                'application/pdf': "text-danger",
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': "text-success",
+                'application/vnd.ms-excel': "text-success",
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': "text-primary",
+                'application/msword': "text-primary",
+                'image/jpeg': "text-info",
+                'image/png': "text-info",
+                'image/gif': "text-info"
+            };
+            return colors[type] || "text-secondary";
+        }
+        
+        function viewGoogleDriveFile(viewUrl) {
+            if (viewUrl) {
+                window.open(viewUrl, '_blank');
+            } else {
+                alert('URL de visualización no disponible');
+            }
+        }
+        
+        function downloadGoogleDriveFile(downloadUrl, fileName) {
+            if (downloadUrl) {
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = fileName;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert('URL de descarga no disponible');
+            }
+        }
+
+        function showGoogleDriveFolder() {
+            // Tu enlace de carpeta de Google Drive
+            const folderUrl = "https://drive.google.com/drive/folders/1i7uUPVn-iEKfVJ5EU-24YcyZ3Z-VNN1d?usp=sharing";
+            
+            // Convertir a URL embebible
+            const embedUrl = folderUrl.replace('/drive/folders/', '/embeddedfolderview?id=').replace('?usp=sharing', '#grid');
+            
+            // Mostrar el iframe
+            const container = document.getElementById('googleDriveFolderContainer');
+            const frame = document.getElementById('googleDriveFrame');
+            const noDocsMessage = document.getElementById('noDocumentsMessage');
+            
+            frame.src = embedUrl;
+            container.style.display = 'block';
+            if (noDocsMessage) noDocsMessage.style.display = 'none';
+            
+            // Scroll suave hacia la carpeta
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function hideGoogleDriveFolder() {
+            const container = document.getElementById('googleDriveFolderContainer');
+            const frame = document.getElementById('googleDriveFrame');
+            
+            container.style.display = 'none';
+            frame.src = '';
+            
+            // Mostrar mensaje si no hay documentos individuales
+            loadGoogleDriveDocuments();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadDynamicDocuments();
+            loadGoogleDriveDocuments();
         });
     </script>
 </body>
