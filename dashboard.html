@@ -89,6 +89,72 @@
             </div>
         </div>
 
+        <!-- Gestión de Archivos (solo para admin) -->
+        <div class="row mb-4" id="fileManagementSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-folder me-2"></i>Gestión de Archivos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="newFolderName" placeholder="Nombre de la carpeta">
+                                    <button class="btn btn-outline-primary" onclick="createFolder()">
+                                        <i class="bi bi-folder-plus me-1"></i>Crear Carpeta
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="fileUpload" multiple>
+                                    <button class="btn btn-outline-success" onclick="uploadFiles()">
+                                        <i class="bi bi-upload me-1"></i>Subir Archivos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="folderSelect" class="form-label">Carpeta destino:</label>
+                            <select class="form-control" id="folderSelect">
+                                <option value="root">Raíz</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualización de Archivos -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="bi bi-files me-2"></i>Documentos y Archivos</h5>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleView('grid')" id="gridViewBtn">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary active" onclick="toggleView('list')" id="listViewBtn">
+                                <i class="bi bi-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb" id="breadcrumb">
+                                <li class="breadcrumb-item"><a href="#" onclick="navigateToFolder('root')">Inicio</a></li>
+                            </ol>
+                        </nav>
+                        <div id="filesContainer" class="files-list-view">
+                            <!-- Los archivos y carpetas se cargarán aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Formulario Nueva Encomienda -->
         <div class="row mb-4">
             <div class="col-lg-6">
